@@ -47,6 +47,7 @@ function ms = msGenerateVideoObj(dirName, filePrefix)
             clearvars dataArray;
             fclose(fileID);
             cameraMatched = 0;
+            ms.time = sysClock(camNum == 1);
             for j=0:max(camNum)
 %                 (frameNum(find(camNum==j,1,'last')) == ms.numFrames)
 %                 (sum(camNum==j) == ms.numFrames)

@@ -26,15 +26,15 @@ end
 %% Parameters
 spatial_downsampling = 3; % (Recommended range: 2 - 4. Downsampling significantly increases computational speed, but verify it does not
 isnonrigid = true; % If true, performs non-rigid registration (slower). If false, rigid alignment (faster).
-analyse_behavior = true;
-copy_to_googledrive = true;
+analyse_behavior = false;
+copy_to_googledrive = false;
 if copy_to_googledrive;
     copydirpath = uigetdir([],'Please select the root folder in which files will be copied');
 end
 
 % Generate timestamp to save analysis
 script_start = tic;
-analysis_time =strcat(date,'_', num2str(hour(now)),'-',num2str(minute(now)),'-',num2str(floor(second(now))));
+analysis_time = strcat(date,'_', datestr(datetime('now'), 'HH-MM-SS'));
 
 %% 1 - Create video object and save into matfile
 display('Step 1: Create video object');
@@ -44,7 +44,7 @@ ms.ds = spatial_downsampling;
 mkdir(strcat(pwd,separator,analysis_time));
 save([ms.dirName separator 'ms.mat'],'ms');
 
-%% 2 - Perform motion correction using NormCorre
+    %% 2 - Perform motion correction using NormCorre
 display('Step 2: Motion correction');
 ms = msNormCorre(ms,isnonrigid);
 
@@ -73,7 +73,7 @@ if copy_to_googledrive;
 end
 
 %% 4 - Cleanup temporary files
-rmdir([ms.dirName separator ms.analysis_time], 's');
+%rmdir([ms.dirName separator ms.analysis_time], 's');
 
 %% 5 - Analyse behavior (optional)
 if analyse_behavior
@@ -82,7 +82,7 @@ if analyse_behavior
     trackLength = 95; %cm
     behav = msExtractBehavoir(behav, trackLength);
     save([ms.dirName separator 'behav.mat'],'behav','-v7.3');
-    
+
     if copy_to_googledrive;
         destination_path = char(strcat(copydirpath, separator, ms.Experiment));
         copyfile('behav.mat', [destination_path separator 'behav.mat']);

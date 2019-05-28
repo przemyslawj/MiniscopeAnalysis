@@ -21,8 +21,8 @@ nam = neuron.select_data(nam);  %if nam is [], then select data interactively
 
 %% parameters
 % -------------------------    COMPUTATION    -------------------------  %
-pars_envs = struct('memory_size_to_use', 12, ...   % GB, memory space you allow to use in MATLAB
-    'memory_size_per_patch', 0.6, ...   % GB, space for loading data within one patch
+pars_envs = struct('memory_size_to_use', 16, ...   % GB, memory space you allow to use in MATLAB
+    'memory_size_per_patch', 1.5, ...   % GB, space for loading data within one patch
     'patch_dims', [64, 64]);  %GB, patch size
 % -------------------------      SPATIAL      -------------------------  %
 include_residual = false; % If true, look for neurons in the residuals
@@ -45,8 +45,8 @@ spatial_constraints = struct('connected', true, 'circular', false);  % you can i
 spatial_algorithm = 'hals_thresh';
 
 % -------------------------      TEMPORAL     -------------------------  %
-Fs = 30;             % frame rate
-tsub = 5;           % temporal downsampling factor
+Fs = 20;             % frame rate
+tsub = 4;           % temporal downsampling factor
 deconv_flag = false; % Perform deconvolution
 deconv_options = struct('type', 'ar1', ... % model of the calcium traces. {'ar1', 'ar2'}
     'method', 'constrained', ... % method for running deconvolution {'foopsi', 'constrained', 'thresholded'}
@@ -83,7 +83,7 @@ bd = 0;             % number of rows/columns to be ignored in the boundary (main
 frame_range = [];   % when [], uses all frames
 save_initialization = false;    % save the initialization procedure as a video.
 use_parallel = true;    % use parallel computation for parallel computing
-show_init = false;   % show initialization results
+show_init = true;   % show initialization results
 choose_params = false; % manually choose parameters
 center_psf = true;  % set the value as true when the background fluctuation is large (usually 1p data)
 % set the value as false when the background fluctuation is small (2p)
@@ -95,7 +95,7 @@ seed_method_res = 'auto';  % method for initializing neurons from the residual
 update_sn = true;
 
 % ----------------------  WITH MANUAL INTERVENTION  --------------------  %
-with_manual_intervention = false;
+with_manual_intervention = true;
 
 % -------------------------    UPDATE ALL    -------------------------  %
 neuron.updateParams('gSig', gSig, ...       % -------- spatial --------
@@ -135,6 +135,11 @@ if choose_params
 end
 
 [center, Cn, PNR] = neuron.initComponents_parallel(K, frame_range, save_initialization, use_parallel);
+
+if isempty(center)
+    disp('No neurons found!')
+end
+    
 neuron.compactSpatial();
 if show_init
     figure();
@@ -235,16 +240,21 @@ end
 neuron.orderROIs('snr');
 %cnmfe_path = neuron.save_workspace();
 
+%% display neurons
+dir_neurons = sprintf('%s%s%s_neurons%s', ms.dirName, filesep, ms.analysis_time, filesep);
+neuron.save_neurons(dir_neurons); 
+
 %% show neuron contours
 ms.Options = neuron.options;
+
 ms.Centroids = center;
 ms.CorrProj = Cn;
 ms.PeakToNoiseProj = PNR;
 
-if include_residual;
-ms.CentroidsRes = center_res;
-ms.CorrProjRes = Cn_res;
-ms.PeakToNoiseProjRes = PNR_res;
+if include_residual
+    ms.CentroidsRes = center_res;
+    ms.CorrProjRes = Cn_res;
+    ms.PeakToNoiseProjRes = PNR_res;
 end
 
 ms.FiltTraces = neuron.C';

@@ -21,7 +21,7 @@ if is_write;
     [file,path] = uiputfile('.avi');
     
 writerObj = VideoWriter([path '/' file],'Uncompressed AVI');
-writerObj.FrameRate = 30;
+writerObj.FrameRate = 20;
     open(writerObj);
 end
 
