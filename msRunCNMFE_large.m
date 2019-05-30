@@ -7,29 +7,22 @@
 
 function ms = msRunCNMFE_large(ms)
 
-%% Auto-detect operating system
-if ispc
-    separator = '\'; % For pc operating systems
-else
-    separator = '/'; % For unix (mac, linux) operating systems
-end
-
 %% choose data
 neuron = Sources2D();
-nam = get_fullname([ms.dirName separator ms.analysis_time separator 'msvideo.avi']);
+nam = get_fullname([ms.dirName filesep ms.analysis_time filesep 'msvideo.avi']);
 nam = neuron.select_data(nam);  %if nam is [], then select data interactively
 
 %% parameters
 % -------------------------    COMPUTATION    -------------------------  %
 pars_envs = struct('memory_size_to_use', 16, ...   % GB, memory space you allow to use in MATLAB
     'memory_size_per_patch', 1.5, ...   % GB, space for loading data within one patch
-    'patch_dims', [64, 64]);  %GB, patch size
+    'patch_dims', [64, 64]);  % patch size
 % -------------------------      SPATIAL      -------------------------  %
 include_residual = false; % If true, look for neurons in the residuals
 gSig = 3;           % pixel, gaussian width of a gaussian kernel for filtering the data. 0 means no filtering
 gSiz = 15;          % pixel, neuron diameter
 ssub = 1;           % spatial downsampling factor
-with_dendrites = true;   % with dendrites or not
+with_dendrites = false;   % with dendrites or not
 if with_dendrites
     % determine the search locations by dilating the current neuron shapes
     updateA_search_method = 'dilate';  %#ok<UNRCH>
@@ -71,7 +64,7 @@ show_merge = false;  % if true, manually verify the merging step
 merge_thr = 0.65;     % thresholds for merging neurons; [spatial overlap ratio, temporal correlation of calcium traces, spike correlation]
 method_dist = 'max';   % method for computing neuron distances {'mean', 'max'}
 dmin = 5;       % minimum distances between two neurons. it is used together with merge_thr
-dmin_only = 2;  % merge neurons if their distances are smaller than dmin_only.
+
 merge_thr_spatial = [0.8, 0.4, -inf];  % merge components with highly correlated spatial shapes (corr=0.8) and small temporal correlations (corr=0.1)
 
 % -------------------------  INITIALIZATION   -------------------------  %
@@ -165,7 +158,7 @@ neuron.merge_high_corr(show_merge, merge_thr_spatial);
 %% update spatial components
 
 %% pick neurons from the residual
-if include_residual;
+if include_residual
     [center_res, Cn_res, PNR_res] = neuron.initComponents_residual_parallel([], save_initialization, use_parallel, min_corr_res, min_pnr_res, seed_method_res);
     if show_init
         figure
@@ -204,62 +197,16 @@ end
 
 %% add a manual intervention and run the whole procedure for a second time
 neuron.options.spatial_algorithm = 'nnls';
+
+cnmfe_matfile = neuron.save_workspace();
+cnmfe_dir = fileparts(cnmfe_matfile);
+save([cnmfe_dir filesep 'ms.mat'], 'ms');
+disp(['Saved workspace to: ', cnmfe_dir])
+    
 if with_manual_intervention
-    show_merge = true;
-    neuron.orderROIs('snr');   % order neurons in different ways {'snr', 'decay_time', 'mean', 'circularity'}
-    neuron.viewNeurons([], neuron.C_raw);
-    
-    % merge closeby neurons
-    neuron.merge_close_neighbors(true, dmin_only);
-    
-    % delete neurons
-    tags = neuron.tag_neurons_parallel();  % find neurons with fewer nonzero pixels than min_pixel and silent calcium transients
-    ids = find(tags>0);
-    if ~isempty(ids)
-        neuron.viewNeurons(ids, neuron.C_raw);
-    end
+    msRunFromIntervention
+else
+    msRunAfterIntervention;
 end
-%% run more iterations
-neuron.update_background_parallel(use_parallel);
-neuron.update_spatial_parallel(use_parallel);
-neuron.update_temporal_parallel(use_parallel);
-
-K = size(neuron.A,2);
-tags = neuron.tag_neurons_parallel();  % find neurons with fewer nonzero pixels than min_pixel and silent calcium transients
-neuron.remove_false_positives();
-neuron.merge_neurons_dist_corr(show_merge);
-neuron.merge_high_corr(show_merge, merge_thr_spatial);
-
-if K~=size(neuron.A,2)
-    neuron.update_spatial_parallel(use_parallel);
-    neuron.update_temporal_parallel(use_parallel);
-    neuron.remove_false_positives();
-end
-
-%% save the workspace for future analysis
-neuron.orderROIs('snr');
-%cnmfe_path = neuron.save_workspace();
-
-%% display neurons
-dir_neurons = sprintf('%s%s%s_neurons%s', ms.dirName, filesep, ms.analysis_time, filesep);
-neuron.save_neurons(dir_neurons); 
-
-%% show neuron contours
-ms.Options = neuron.options;
-
-ms.Centroids = center;
-ms.CorrProj = Cn;
-ms.PeakToNoiseProj = PNR;
-
-if include_residual
-    ms.CentroidsRes = center_res;
-    ms.CorrProjRes = Cn_res;
-    ms.PeakToNoiseProjRes = PNR_res;
-end
-
-ms.FiltTraces = neuron.C';
-ms.RawTraces = neuron.C_raw';
-ms.SFPs = neuron.reshape(neuron.A, 2);
-ms.numNeurons = size(ms.SFPs,3);
 
 end

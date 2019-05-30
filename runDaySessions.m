@@ -1,6 +1,6 @@
 parent_dir = '/mnt/DATA/Prez/ca_img/tmp/F/2017-10-31';
 parent_dir = '/mnt/DATA/Prez/ca_img/tmp/1BR'
-parent_dir = '/mnt/DATA/Prez/cheeseboard/2019-02-learning/2019-02-24/mv_caimg/1BR';
+parent_dir = '/mnt/DATA/Prez/cheeseboard/2019-02-learning/2019-02-25/mv_caimg/1BR';
 
 %% Parameters
 spatial_downsampling = 2; % (Recommended range: 2 - 4. Downsampling significantly increases computational speed, but verify it does not
@@ -34,9 +34,10 @@ ms.dirName = parent_dir;
 
 %% 2 - Perform motion correction using NormCorre
 mkdir([ms.dirName filesep analysis_time]);
-save([ms.dirName filesep 'ms.mat'],'ms');
+
 disp('Step 2: Motion correction');
 ms = myNormCorre(ms,isnonrigid);
+save([ms.dirName filesep 'ms.mat'],'ms','-v7.3');
 
 %% 3 - Perform CNMFE 
 disp('Step 3: CNMFE');
