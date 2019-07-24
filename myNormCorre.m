@@ -21,42 +21,22 @@ psf(~ind_nonzero) = 0;
 
 template = [];
 
-registeredGreyVid = VideoWriter([ms.dirName filesep ms.analysis_time filesep 'msvideo_gray.avi'],'Grayscale AVI');
+%registeredGreyVid = VideoWriter([ms.dirName filesep ms.analysis_time filesep 'msvideo_gray.avi'],'Grayscale AVI');
+%open(registeredGreyVid);
 registeredVid = VideoWriter([ms.dirName filesep ms.analysis_time filesep 'msvideo.avi'],'Grayscale AVI');
 open(registeredVid);
-open(registeredGreyVid);
 
 ms.shifts = [];
 ms.meanFrame = [];
-position = [];
+position = ms.ROIPosition;
 
 for video_i = 1:ms.numFiles
-    name = [ms.vidObj{1, video_i}.Path filesep ms.vidObj{1, video_i}.Name];
-    disp(['Registration on: ' name]);
-    
-    % read data and convert to single
-    Yf = read_file(name);
-    Yf = single(Yf);
-    Yf = downsample_data(Yf,'space',1,ms.ds,1);
-    
-    if isempty(position)
-        bound = 80 / 2/ ms.ds;
-        ROIsize = [size(Yf,1) - bound, size(Yf,2) - bound];
-        f = figure('units','normalized','outerposition',[0 0 1 1]);
-        imagesc(Yf(:,:,10)); axis image; colormap gray;
-        h = imrect(gca,[bound,bound,ROIsize(2),ROIsize(1)]);
-
-        suptitle({'Position the rectangles to select the best image region' ; 'Choose approx. the same area in every session' ; 'Confirm with double click on rectangles (left to right)'})
-        position = wait(h);
-        position(4) = position(2) + position(4);
-        position(3) = position(1) + position(3);
-        position = round(position);
-        close(f);
-    end
-    
+    [Yf, fpath] = ReadVideo(ms, video_i);
+    disp(['Registration on: ' fpath]);
+            
     Y = imfilter(Yf, psf, 'symmetric');
     Y_cropped = Y(position(2):position(4), position(1):position(3), :);
-    [d1, d2, T] = size(Y_cropped);
+    [d1, d2, ~] = size(Y_cropped);
       
     % Setting registration parameters (rigid vs non-rigid)
     if isnonrigid
@@ -79,9 +59,9 @@ for video_i = 1:ms.numFiles
     end
     
     Mr = apply_shifts(Yf,shifts1,options,double(position(2)),double(position(1))); 
-    M1_scaled = M1 - min(M1(:));
-    M1_scaled = M1_scaled * 250 / max(M1_scaled(:));
-    writeVideo(registeredGreyVid,uint8(M1_scaled));
+    %M1_scaled = M1 - min(M1(:));
+    %M1_scaled = M1_scaled * 250 / max(M1_scaled(:));
+    %writeVideo(registeredGreyVid,uint8(M1_scaled));
     writeVideo(registeredVid,uint8(Mr));
     
     %% compute metrics
@@ -115,6 +95,9 @@ for video_i = 1:ms.numFiles
 end
 
 close(registeredVid);
-close(registeredGreyVid);
+%close(registeredGreyVid);
 
 end
+
+
+

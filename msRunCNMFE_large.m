@@ -14,8 +14,8 @@ nam = neuron.select_data(nam);  %if nam is [], then select data interactively
 
 %% parameters
 % -------------------------    COMPUTATION    -------------------------  %
-pars_envs = struct('memory_size_to_use', 16, ...   % GB, memory space you allow to use in MATLAB
-    'memory_size_per_patch', 1.5, ...   % GB, space for loading data within one patch
+pars_envs = struct('memory_size_to_use', 12, ...   % GB, memory space you allow to use in MATLAB
+    'memory_size_per_patch', 1.2, ...   % GB, space for loading data within one patch
     'patch_dims', [64, 64]);  % patch size
 % -------------------------      SPATIAL      -------------------------  %
 include_residual = false; % If true, look for neurons in the residuals
@@ -39,7 +39,7 @@ spatial_algorithm = 'hals_thresh';
 
 % -------------------------      TEMPORAL     -------------------------  %
 Fs = 20;             % frame rate
-tsub = 4;           % temporal downsampling factor
+tsub = 5;           % temporal downsampling factor
 deconv_flag = false; % Perform deconvolution
 deconv_options = struct('type', 'ar1', ... % model of the calcium traces. {'ar1', 'ar2'}
     'method', 'constrained', ... % method for running deconvolution {'foopsi', 'constrained', 'thresholded'}
@@ -86,9 +86,6 @@ min_corr_res = 0.8; % Default 0.7
 min_pnr_res = 8;
 seed_method_res = 'auto';  % method for initializing neurons from the residual
 update_sn = true;
-
-% ----------------------  WITH MANUAL INTERVENTION  --------------------  %
-with_manual_intervention = true;
 
 % -------------------------    UPDATE ALL    -------------------------  %
 neuron.updateParams('gSig', gSig, ...       % -------- spatial --------
@@ -198,15 +195,8 @@ end
 %% add a manual intervention and run the whole procedure for a second time
 neuron.options.spatial_algorithm = 'nnls';
 
-cnmfe_matfile = neuron.save_workspace();
-cnmfe_dir = fileparts(cnmfe_matfile);
-save([cnmfe_dir filesep 'ms.mat'], 'ms');
-disp(['Saved workspace to: ', cnmfe_dir])
-    
-if with_manual_intervention
-    msRunFromIntervention
-else
-    msRunAfterIntervention;
-end
+ms.cnmfe_matfile = neuron.save_workspace();
+save([ms.dirName filesep 'ms.mat'], 'ms');
+disp(['Saved workspace to dir: ', ms.dirName])
 
 end
