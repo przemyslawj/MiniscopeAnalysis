@@ -4,26 +4,29 @@ addpath('/mnt/DATA/Prez/code/cheeseboard_analysis/matlab')
 
 subject = ms.Experiment;
 ncells = ms.numNeurons;
-
+max_time_min = 4;
 A = squeeze(max(ms.SFPs,[], 3));
 
 %% Draw cells
+selected_cells = [6 8 18 25 35 39];
+%selected_cells = 28:40;
 figure;
-imagesc(A);
-colormap gray
+draw_threshold=5;
 hold on;
-
-for cell_idx = 1:ncells
-    %outline = outlines{cell_idx};
-    %plot(outline(:,1), outline(:,2));
+imagesc(A);
+colormap gray;
+for cell_idx = selected_cells
     sfp = squeeze(ms.SFPs(:, :, cell_idx));
-    s = regionprops(sfp,'centroid');
+    s = regionprops(sfp > draw_threshold,'all');
     centroid = round([s.Centroid]);
-    text(centroid(1) + 2, centroid(2), num2str(cell_idx), 'Color', 'White');
+    outline = round([s.ConvexHull]);
+    plot(outline(:,1), outline(:,2), 'LineWidth', 3)
+    %text(centroid(1) + 8, centroid(2), num2str(cell_idx), 'Color', 'White');
 end
 
 hold off;
-
+xlim([75 290]);
+ylim([40 240]);
 %% Align timestamps in case of missing frames
 sessionLengths = cell2mat(ms.sessionLengths)';
 if numel(ms.time) > size(ms.RawTraces, 1)
@@ -54,7 +57,7 @@ for session_i = 1:(numel(sessionLengths) - 1)
 end
 timestamps_min = timestamps / 1000 / 60;
 
-for i = 1:ncells
+for i = selected_cells
     signal_scaler = 3;
     trace = ms.RawTraces(:,i)';
     
@@ -62,16 +65,17 @@ for i = 1:ncells
     trace = trace - mean(trace);
     
     shifted_trace = trace/signal_scaler + current_shift;
-    plot(timestamps_min, shifted_trace);
+    plot(timestamps_min, shifted_trace, 'LineWidth', 1);
     event_timestamps_min = timestamps_min(eventVec > 0);
-    plot(event_timestamps_min, repmat(current_shift+0.7, numel(event_timestamps_min), 1), 'r*',...
-        'MarkerSize',2);
-    plot(timestamps_min, repmat(current_shift + thresholds(1) / signal_scaler, 1, length(timestamps_min)), 'r--');
+    %plot(event_timestamps_min, repmat(current_shift+0.7, numel(event_timestamps_min), 1), 'r*',...
+    %    'MarkerSize',2);
+    %plot(timestamps_min, repmat(current_shift + thresholds(1) / signal_scaler, 1, length(timestamps_min)), 'r--');
     
     current_shift = current_shift + zshift;
 end
 
 hold off;
+xlim([0 max_time_min]);
 
 % function A = zscore(traces)
 %     A = traces - mean(traces, 2);

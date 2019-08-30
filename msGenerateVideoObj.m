@@ -26,7 +26,8 @@ function ms = msGenerateVideoObj(dirName, filePrefix)
     
     %generate a vidObj for each video file. Also calculate total frames
     for i=1:ms.numFiles
-%         [folder filesep num2str(filePrefix) num2str(i) '.avi']
+
+        [dirName filesep num2str(filePrefix) num2str(i) '.avi']
         ms.vidObj{i} = VideoReader([dirName filesep num2str(filePrefix) num2str(i) '.avi']);
         ms.vidNum = [ms.vidNum i*ones(1,ms.vidObj{i}.NumberOfFrames)];
         ms.frameNum = [ms.frameNum 1:ms.vidObj{i}.NumberOfFrames];
@@ -41,13 +42,16 @@ function ms = msGenerateVideoObj(dirName, filePrefix)
             fileID = fopen([dirName filesep datFiles(i).name],'r');
             dataArray = textscan(fileID, '%f%f%f%f%[^\n\r]', 'Delimiter', '\t', 'EmptyValue' ,NaN,'HeaderLines' ,1, 'ReturnOnError', false);
             camNum = dataArray{:, 1};
+            % Assumes miniscope cam is the one for which the first frame is
+            % recorded
+            miniscopeCam = camNum(1);
             frameNum = dataArray{:, 2};
             sysClock = dataArray{:, 3};
             buffer1 = dataArray{:, 4};
             clearvars dataArray;
             fclose(fileID);
             cameraMatched = 0;
-            ms.time = sysClock(camNum == 1);
+            ms.time = sysClock(camNum == miniscopeCam);
             for j=0:max(camNum)
 %                 (frameNum(find(camNum==j,1,'last')) == ms.numFrames)
 %                 (sum(camNum==j) == ms.numFrames)

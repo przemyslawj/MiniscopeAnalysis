@@ -14,13 +14,13 @@ nam = neuron.select_data(nam);  %if nam is [], then select data interactively
 
 %% parameters
 % -------------------------    COMPUTATION    -------------------------  %
-pars_envs = struct('memory_size_to_use', 12, ...   % GB, memory space you allow to use in MATLAB
-    'memory_size_per_patch', 1.2, ...   % GB, space for loading data within one patch
+pars_envs = struct('memory_size_to_use', 15, ...   % GB, memory space you allow to use in MATLAB
+    'memory_size_per_patch', 3.0, ...   % GB, space for loading data within one patch
     'patch_dims', [64, 64]);  % patch size
 % -------------------------      SPATIAL      -------------------------  %
 include_residual = false; % If true, look for neurons in the residuals
 gSig = 3;           % pixel, gaussian width of a gaussian kernel for filtering the data. 0 means no filtering
-gSiz = 15;          % pixel, neuron diameter
+gSiz = 16;          % pixel, neuron diameter
 ssub = 1;           % spatial downsampling factor
 with_dendrites = false;   % with dendrites or not
 if with_dendrites
@@ -40,13 +40,13 @@ spatial_algorithm = 'hals_thresh';
 % -------------------------      TEMPORAL     -------------------------  %
 Fs = 20;             % frame rate
 tsub = 5;           % temporal downsampling factor
-deconv_flag = false; % Perform deconvolution
+deconv_flag = true; % Perform deconvolution
 deconv_options = struct('type', 'ar1', ... % model of the calcium traces. {'ar1', 'ar2'}
     'method', 'constrained', ... % method for running deconvolution {'foopsi', 'constrained', 'thresholded'}
     'smin', -5, ...         % minimum spike size. When the value is negative, the actual threshold is abs(smin)*noise level
     'optimize_pars', true, ...  % optimize AR coefficients
     'optimize_b', true, ...% optimize the baseline);
-    'max_tau', 100);    % maximum decay time (unit: frame);
+    'max_tau', 200);    % maximum decay time (unit: frame);
 
 nk = 3;             % detrending the slow fluctuation. usually 1 is fine (no detrending)
 % when changed, try some integers smaller than total_frame/(Fs*30)
@@ -61,7 +61,7 @@ num_neighbors = []; % number of neighbors for each neuron
 
 % -------------------------      MERGING      -------------------------  %
 show_merge = false;  % if true, manually verify the merging step
-merge_thr = 0.65;     % thresholds for merging neurons; [spatial overlap ratio, temporal correlation of calcium traces, spike correlation]
+merge_thr = 0.6;     % thresholds for merging neurons; [spatial overlap ratio, temporal correlation of calcium traces, spike correlation]
 method_dist = 'max';   % method for computing neuron distances {'mean', 'max'}
 dmin = 5;       % minimum distances between two neurons. it is used together with merge_thr
 
@@ -72,7 +72,7 @@ K = [];             % maximum number of neurons per patch. when K=[], take as ma
 min_corr = 0.8;     % minimum local correlation for a seeding pixel, default 0.8
 min_pnr = 8;       % minimum peak-to-noise ratio for a seeding pixel
 min_pixel = gSig^2;      % minimum number of nonzero pixels for each neuron
-bd = 0;             % number of rows/columns to be ignored in the boundary (mainly for motion corrected data)
+bd = 3;             % number of rows/columns to be ignored in the boundary (mainly for motion corrected data)
 frame_range = [];   % when [], uses all frames
 save_initialization = false;    % save the initialization procedure as a video.
 use_parallel = true;    % use parallel computation for parallel computing

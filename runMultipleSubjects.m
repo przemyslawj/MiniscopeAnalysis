@@ -1,5 +1,5 @@
 parent_dir = '/mnt/DATA/Prez/ca_img/miniscope_habituation/2019-07-16/mv_caimg/';
-parent_dir = '/mnt/DATA/Prez/cheeseboard/2019-07-habituation/2019-07-22/mv_caimg/';
+parent_dir = '/mnt/DATA/Prez/cheeseboard/2019-08-habituation/2019-08-28/mv_caimg/';
 
 %% Parameters
 spatial_downsampling = 2; % (Recommended range: 2 - 4. Downsampling significantly increases computational speed, but verify it does not
@@ -22,6 +22,7 @@ for subject_i = 1:nsubjects
     ms.subject = subject;
     msStructs{subject_i} = ms;
 end
+save([parent_dir filesep 'workspace.mat'], 'msStructs', 'nsubjects', 'subjects');
 
 %% 2 - Perform motion correction using NormCorre
 disp('Step 2: Motion correction');
@@ -47,35 +48,44 @@ end
 
 %% 3 - Perform CNMFE until intervention
 disp('Step 3: CNMFE');
+clear -regexp ms* Yf mat_data_*;
+load([parent_dir filesep 'workspace.mat'])
 
 for subject_i = 1:nsubjects
+    clear Yf mat_data_*;
+    close;
+    
     ms = msStructs{subject_i};
     load([ms.dirName filesep 'ms.mat']);
     disp(['Running CNMFE for: ' subjects{subject_i}]);
     duration_tic = tic;
     ms = msRunCNMFE_large(ms);
     ms.analysis_duration = ms.analysis_duration + toc(duration_tic);
-    msStructs{subject_i} = ms;
     save([ms.dirName filesep 'ms.mat'],'ms','-v7.3');
 end
+clear -regexp ms* Yf mat_data_*;
 
 %% 4 - Manual review of neurons
 disp('Step 4: Review neurons');
-if with_manual_intervention
-    for subject_i = 1:nsubjects
-        ms = msStructs{subject_i};
-        load([ms.dirName filesep 'ms.mat']);
-        msRunManualIntervention;
-        ms.cnmfe_matfile = neuron.save_workspace();
-        ms.step = 'after_review';
-        save([ms.dirName filesep 'ms.mat'],'ms','-v7.3');
-        msStructs{subject_i} = ms;
-    end
+
+load([parent_dir filesep 'workspace.mat'])
+for subject_i = 1:nsubjects
+    ms = msStructs{subject_i};
+    load([ms.dirName filesep 'ms.mat']);
+    msRunManualIntervention;
+    ms.cnmfe_matfile = neuron.save_workspace();
+    ms.step = 'after_review';
+    save([ms.dirName filesep 'ms.mat'],'ms','-v7.3');
 end
+
+clear -regexp ms* Yf mat_data_*;
 
 %% 4 - Run more CNMFE iterations
 disp('Step 5: CNMFE after neurons reviewed');
+
+load([parent_dir filesep 'workspace.mat'])
 for subject_i = 1:nsubjects
+    clear Yf mat_data_*;
     ms = msStructs{subject_i};
     load([ms.dirName filesep 'ms.mat']);
     load(ms.cnmfe_matfile);

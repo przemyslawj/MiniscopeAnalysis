@@ -6,7 +6,7 @@ load([ms.dirName filesep 'ms.mat']);
 
 dmin_only = 4;  % merge neurons if their distances are smaller than dmin_only.
 %% Manual intervention
-neuron.orderROIs('snr');   % order neurons in different ways {'snr', 'decay_time', 'mean', 'circularity'}
+neuron.orderROIs('my_pnr');   % order neurons in different ways {'snr', 'decay_time', 'mean', 'circularity'}
 neuron.viewNeurons([], neuron.C_raw);
     
 % merge closeby neurons
